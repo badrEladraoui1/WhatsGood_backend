@@ -8,6 +8,8 @@ public class ChatMessage {
     private String sender;
     private String receiver;
     private LocalDateTime timestamp;
+    private String senderProfilePicture;
+
 
     public ChatMessage() {
     }
@@ -58,6 +60,14 @@ public class ChatMessage {
 
     public void setTimestamp(LocalDateTime timestamp) {
         this.timestamp = timestamp;
+    }
+
+    public String getSenderProfilePicture() {
+        return senderProfilePicture;
+    }
+
+    public void setSenderProfilePicture(String senderProfilePicture) {
+        this.senderProfilePicture = senderProfilePicture;
     }
 
     public enum MessageType {

@@ -14,7 +14,9 @@ public class User {
 
     private String password;
 
-    // Constructor
+    @Column(name = "profile_picture")
+    private String profilePicture;
+
     public User() {}
 
     public User(Integer id, String username, String password) {
@@ -23,7 +25,6 @@ public class User {
         this.password = password;
     }
 
-    // Getters and Setters
     public Integer getId() {
         return id;
     }
@@ -46,5 +47,13 @@ public class User {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public void setProfilePicture(String profilePicture) {
+        this.profilePicture = profilePicture;
+    }
+
+    public String getProfilePicture() {
+        return profilePicture;
     }
 }

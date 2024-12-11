@@ -8,5 +8,6 @@ public interface UserService {
     Optional<User> findByUsername(String username);
     boolean existsByUsername(String username);
     User registerUser(User user);
+    void save(User user);
 
 }
