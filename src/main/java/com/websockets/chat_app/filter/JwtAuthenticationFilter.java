@@ -32,7 +32,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
 
-        // Skip JWT validation for authentication endpoints
         if (request.getServletPath().contains("/auth/login") ||
                 request.getServletPath().contains("/auth/signup")) {
             chain.doFilter(request, response);

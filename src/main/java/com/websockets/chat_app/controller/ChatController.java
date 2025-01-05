@@ -4,6 +4,7 @@ import com.websockets.chat_app.entity.ChatMessage;
 import com.websockets.chat_app.entity.User;
 import com.websockets.chat_app.service.ChatService;
 import com.websockets.chat_app.service.UserService;
+import com.websockets.chat_app.service.impl.FileStorageService;
 import com.websockets.chat_app.service.impl.JwtService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -11,27 +12,31 @@ import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
+import java.util.Map;
 
 @RequestMapping("/chat")
+@CrossOrigin(origins = "*", allowedHeaders = "*")
 @Controller
 public class ChatController {
 
     private final ChatService chatService;
     private final UserService userService;
     private final JwtService jwtService;
+    private final FileStorageService fileStorageService;
 
-    public ChatController(ChatService chatService, UserService userService , JwtService jwtService) {
+    public ChatController(ChatService chatService, UserService userService , JwtService jwtService , FileStorageService fileStorageService) {
         this.chatService = chatService;
         this.userService = userService;
         this.jwtService = jwtService;
+        this.fileStorageService = fileStorageService;
     }
 
     @MessageMapping("/chat.private")
@@ -43,8 +48,25 @@ public class ChatController {
                 .orElseThrow(() -> new RuntimeException("User not found"));
         message.setSenderProfilePicture(sender.getProfilePicture());
 
+        // Log file message details for debugging
+        if (message.getType() == ChatMessage.MessageType.FILE) {
+            System.out.println("Received file message: " + message.getFileName());
+            System.out.println("File type: " + message.getFileType());
+        }
+
         chatService.sendPrivateMessage(message);
     }
+//    @MessageMapping("/chat.private")
+//    public void handlePrivateMessage(@Payload ChatMessage message) {
+//        message.setTimestamp(LocalDateTime.now());
+//
+//        // Get sender's profile picture
+//        User sender = userService.findByUsername(message.getSender())
+//                .orElseThrow(() -> new RuntimeException("User not found"));
+//        message.setSenderProfilePicture(sender.getProfilePicture());
+//
+//        chatService.sendPrivateMessage(message);
+//    }
 
     @MessageMapping("/chat.sendMessage")
     @SendTo("/topic/public")
@@ -65,5 +87,71 @@ public class ChatController {
         String currentUsername = jwtService.getUsernameFromToken(token.replace("Bearer ", ""));
         // Implement message history retrieval
         return ResponseEntity.ok(new ArrayList<>());
+    }
+
+//    @PostMapping("/upload")
+//    public ResponseEntity<Map<String, String>> uploadFile(
+//            @RequestParam("file") MultipartFile file,
+//            @RequestParam("sender") String sender,
+//            @RequestParam("receiver") String receiver) {
+//
+//        try {
+//            // Instead of just storing the file, read its bytes
+//            byte[] fileBytes = file.getBytes();
+//            String base64File = Base64.getEncoder().encodeToString(fileBytes);
+//
+//            return ResponseEntity.ok(Map.of(
+//                    "fileName", file.getOriginalFilename(),
+//                    "fileType", file.getContentType(),
+//                    "fileContent", base64File
+//            ));
+//        } catch (Exception e) {
+//            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+//        }
+//    }
+
+    @PostMapping("/upload")
+    public ResponseEntity<Map<String, String>> uploadFile(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam("sender") String sender,
+            @RequestParam("receiver") String receiver) {
+
+        try {
+            String fileName = fileStorageService.storeFile(file);
+            String fileUrl = ServletUriComponentsBuilder.fromCurrentContextPath()
+                    .path("/uploads/")
+                    .path(fileName)
+                    .toUriString();
+
+            return ResponseEntity.ok(Map.of("fileUrl", fileUrl));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/upload-audio")
+    public ResponseEntity<ChatMessage> uploadAudioFile(
+            @RequestParam("audio") MultipartFile file,
+            @RequestParam("sender") String sender,
+            @RequestParam("receiver") String receiver) {
+
+        try {
+            String fileName = fileStorageService.storeFile(file);
+            String fileUrl = ServletUriComponentsBuilder.fromCurrentContextPath()
+                    .path("/uploads/")
+                    .path(fileName)
+                    .toUriString();
+
+            ChatMessage message = new ChatMessage();
+            message.setType(ChatMessage.MessageType.FILE);
+            message.setFileName(file.getOriginalFilename());
+            message.setFileType(file.getContentType());
+            message.setAudioUrl(fileUrl);
+            message.setAudioType(file.getContentType());
+
+            return ResponseEntity.ok(message);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new ChatMessage());
+        }
     }
 }

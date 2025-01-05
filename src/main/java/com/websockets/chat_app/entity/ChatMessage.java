@@ -10,6 +10,15 @@ public class ChatMessage {
     private LocalDateTime timestamp;
     private String senderProfilePicture;
 
+    private String fileName;
+    private String fileType;
+    private Long fileSize;
+    private String audioUrl;
+    private String audioType;
+
+    private Integer groupId;
+
+
 
     public ChatMessage() {
     }
@@ -70,7 +79,67 @@ public class ChatMessage {
         this.senderProfilePicture = senderProfilePicture;
     }
 
+    public String getFileName() {
+        return fileName;
+    }
+
+    public void setFileName(String fileName) {
+        this.fileName = fileName;
+    }
+
+    public String getFileType() {
+        return fileType;
+    }
+
+    public void setFileType(String fileType) {
+        this.fileType = fileType;
+    }
+
+    public Long getFileSize() {
+        return fileSize;
+    }
+
+    public void setFileSize(Long fileSize) {
+        this.fileSize = fileSize;
+    }
+
+    public String getAudioUrl() {
+        return audioUrl;
+    }
+
+    public void setAudioUrl(String audioUrl) {
+        this.audioUrl = audioUrl;
+    }
+
+    public String getAudioType() {
+        return audioType;
+    }
+
+    public void setAudioType(String audioType) {
+        this.audioType = audioType;
+    }
+
+    public Integer getGroupId() {
+        return groupId;
+    }
+
+    public void setGroupId(Integer groupId) {
+        this.groupId = groupId;
+    }
+
     public enum MessageType {
-        CHAT, JOIN, LEAVE
+        CHAT, JOIN, LEAVE, FILE, GROUP_CHAT
+    }
+
+    @Override
+    public String toString() {
+        return "ChatMessage{" +
+                "type=" + type +
+                ", sender='" + sender + '\'' +
+                ", receiver='" + receiver + '\'' +
+                ", timestamp=" + timestamp +
+                ", fileName='" + fileName + '\'' +
+                ", fileType='" + fileType + '\'' +
+                '}';
     }
 }
