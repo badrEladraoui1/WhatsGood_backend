@@ -56,17 +56,6 @@ public class ChatController {
 
         chatService.sendPrivateMessage(message);
     }
-//    @MessageMapping("/chat.private")
-//    public void handlePrivateMessage(@Payload ChatMessage message) {
-//        message.setTimestamp(LocalDateTime.now());
-//
-//        // Get sender's profile picture
-//        User sender = userService.findByUsername(message.getSender())
-//                .orElseThrow(() -> new RuntimeException("User not found"));
-//        message.setSenderProfilePicture(sender.getProfilePicture());
-//
-//        chatService.sendPrivateMessage(message);
-//    }
 
     @MessageMapping("/chat.sendMessage")
     @SendTo("/topic/public")
@@ -79,35 +68,14 @@ public class ChatController {
     }
 
 
-    @GetMapping("/messages/{username}")
-    @PreAuthorize("isAuthenticated()")  // Add this annotation
-    public ResponseEntity<List<ChatMessage>> getMessageHistory(
-            @PathVariable String username,
-            @RequestHeader("Authorization") String token) {
-        String currentUsername = jwtService.getUsernameFromToken(token.replace("Bearer ", ""));
-        // Implement message history retrieval
-        return ResponseEntity.ok(new ArrayList<>());
-    }
-
-//    @PostMapping("/upload")
-//    public ResponseEntity<Map<String, String>> uploadFile(
-//            @RequestParam("file") MultipartFile file,
-//            @RequestParam("sender") String sender,
-//            @RequestParam("receiver") String receiver) {
-//
-//        try {
-//            // Instead of just storing the file, read its bytes
-//            byte[] fileBytes = file.getBytes();
-//            String base64File = Base64.getEncoder().encodeToString(fileBytes);
-//
-//            return ResponseEntity.ok(Map.of(
-//                    "fileName", file.getOriginalFilename(),
-//                    "fileType", file.getContentType(),
-//                    "fileContent", base64File
-//            ));
-//        } catch (Exception e) {
-//            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-//        }
+//    @GetMapping("/messages/{username}")
+//    @PreAuthorize("isAuthenticated()")  // Add this annotation
+//    public ResponseEntity<List<ChatMessage>> getMessageHistory(
+//            @PathVariable String username,
+//            @RequestHeader("Authorization") String token) {
+//        String currentUsername = jwtService.getUsernameFromToken(token.replace("Bearer ", ""));
+//        // Implement message history retrieval
+//        return ResponseEntity.ok(new ArrayList<>());
 //    }
 
     @PostMapping("/upload")
@@ -129,11 +97,52 @@ public class ChatController {
         }
     }
 
-    @PostMapping("/upload-audio")
-    public ResponseEntity<ChatMessage> uploadAudioFile(
-            @RequestParam("audio") MultipartFile file,
+    @MessageMapping("/chat.group")
+    public void handleGroupMessage(@Payload ChatMessage message) {
+        message.setTimestamp(LocalDateTime.now());
+
+        // Get sender's profile picture
+        User sender = userService.findByUsername(message.getSender())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        message.setSenderProfilePicture(sender.getProfilePicture());
+
+        System.out.println("Received group message: " + message.getContent());
+        System.out.println("For group: " + message.getGroupId());
+
+        chatService.sendGroupMessage(message);
+    }
+
+//    @PostMapping("/upload-audio")
+//    public ResponseEntity<ChatMessage> uploadAudioFile(
+//            @RequestParam("audio") MultipartFile file,
+//            @RequestParam("sender") String sender,
+//            @RequestParam("receiver") String receiver) {
+//
+//        try {
+//            String fileName = fileStorageService.storeFile(file);
+//            String fileUrl = ServletUriComponentsBuilder.fromCurrentContextPath()
+//                    .path("/uploads/")
+//                    .path(fileName)
+//                    .toUriString();
+//
+//            ChatMessage message = new ChatMessage();
+//            message.setType(ChatMessage.MessageType.FILE);
+//            message.setFileName(file.getOriginalFilename());
+//            message.setFileType(file.getContentType());
+//            message.setAudioUrl(fileUrl);
+//            message.setAudioType(file.getContentType());
+//
+//            return ResponseEntity.ok(message);
+//        } catch (Exception e) {
+//            return ResponseEntity.badRequest().body(new ChatMessage());
+//        }
+//    }
+
+    @PostMapping("/upload-group")
+    public ResponseEntity<Map<String, String>> uploadGroupFile(
+            @RequestParam("file") MultipartFile file,
             @RequestParam("sender") String sender,
-            @RequestParam("receiver") String receiver) {
+            @RequestParam("groupId") Long groupId) {
 
         try {
             String fileName = fileStorageService.storeFile(file);
@@ -142,16 +151,10 @@ public class ChatController {
                     .path(fileName)
                     .toUriString();
 
-            ChatMessage message = new ChatMessage();
-            message.setType(ChatMessage.MessageType.FILE);
-            message.setFileName(file.getOriginalFilename());
-            message.setFileType(file.getContentType());
-            message.setAudioUrl(fileUrl);
-            message.setAudioType(file.getContentType());
-
-            return ResponseEntity.ok(message);
+            return ResponseEntity.ok(Map.of("fileUrl", fileUrl));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(new ChatMessage());
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
+
 }

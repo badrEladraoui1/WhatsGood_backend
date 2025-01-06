@@ -6,13 +6,16 @@ import com.websockets.chat_app.entity.User;
 import com.websockets.chat_app.service.ChatService;
 import com.websockets.chat_app.service.GroupService;
 import com.websockets.chat_app.service.UserService;
+import jakarta.transaction.Transactional;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
+@Transactional
 public class ChatServiceImpl implements ChatService {
 
     private final UserService userService;
@@ -48,34 +51,36 @@ public class ChatServiceImpl implements ChatService {
                 message
         );
     }
-//    public void sendPrivateMessage(ChatMessage message) {
+
+
+//    @Override
+//    public void notifyUserStatus(String username, boolean isOnline, String token) {
+//        if (!jwtService.isTokenValid(token)) {
+//            throw new RuntimeException("Invalid token");
+//        }
+//        messagingTemplate.convertAndSend("/topic/status",
+//                Map.of("username", username, "isOnline", isOnline));
+//    }
+
+
+//    @Override
+//    public void sendGroupMessage(ChatMessage message) {
 //        message.setTimestamp(LocalDateTime.now());
 //        User sender = userService.findByUsername(message.getSender())
 //                .orElseThrow(() -> new RuntimeException("Sender not found"));
 //        message.setSenderProfilePicture(sender.getProfilePicture());
 //
-//        messagingTemplate.convertAndSendToUser(
-//                message.getReceiver(),
-//                "/queue/messages",
-//                message
-//        );
-//    }
-
-    @Override
-    public void notifyUserStatus(String username, boolean isOnline, String token) {
-        if (!jwtService.isTokenValid(token)) {
-            throw new RuntimeException("Invalid token");
-        }
-        messagingTemplate.convertAndSend("/topic/status",
-                Map.of("username", username, "isOnline", isOnline));
-    }
-//    public void notifyUserStatus(String username, boolean isOnline, String token) {
-//        if (!jwtService.isTokenValid(token)) {
-//            throw new RuntimeException("Invalid token");
-//        }
+//        Group group = groupService.getGroupById(message.getGroupId())
+//                .orElseThrow(() -> new RuntimeException("Group not found"));
 //
-//        messagingTemplate.convertAndSend("/topic/status",
-//                Map.of("username", username, "isOnline", isOnline));
+//        // Send to all group members
+//        for (User member : group.getMembers()) {
+//            messagingTemplate.convertAndSendToUser(
+//                    member.getUsername(),
+//                    "/queue/group-messages",
+//                    message
+//            );
+//        }
 //    }
 
     @Override
@@ -88,8 +93,14 @@ public class ChatServiceImpl implements ChatService {
         Group group = groupService.getGroupById(message.getGroupId())
                 .orElseThrow(() -> new RuntimeException("Group not found"));
 
+        System.out.println("Sending group message to members: " +
+                group.getMembers().stream()
+                        .map(User::getUsername)
+                        .collect(Collectors.joining(", ")));
+
         // Send to all group members
         for (User member : group.getMembers()) {
+            System.out.println("Sending to member: " + member.getUsername());
             messagingTemplate.convertAndSendToUser(
                     member.getUsername(),
                     "/queue/group-messages",

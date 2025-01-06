@@ -10,9 +10,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
+@Transactional
 public class GroupServiceImpl implements GroupService {
     private final GroupRepo groupRepo;
     private final UserService userService;
@@ -68,8 +68,18 @@ public class GroupServiceImpl implements GroupService {
         return groupRepo.findByMembersUsername(username);
     }
 
+//    @Override
+//    public Optional<Group> getGroupById(Integer groupId) {
+//        return groupRepo.findById(groupId);
+//    }
+
     @Override
     public Optional<Group> getGroupById(Integer groupId) {
-        return groupRepo.findById(groupId);
+        return groupRepo.findById(groupId)
+                .map(group -> {
+                    // Force initialization of members
+                    group.getMembers().size();
+                    return group;
+                });
     }
 }

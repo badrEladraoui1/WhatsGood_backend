@@ -57,6 +57,7 @@ public class SecurityConfig {
                         .requestMatchers("/chat/upload").permitAll()
                         .requestMatchers("/uploads/**").permitAll()
                         .requestMatchers("/groups/**").permitAll()
+                        .requestMatchers("/chat/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session ->
